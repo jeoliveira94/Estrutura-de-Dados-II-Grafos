@@ -26,6 +26,7 @@ class Aresta(object):
     def __str__(self):
         return '{}--{}-->{}'.format(self.origem.nome, self.peso, self.destino.nome)
 
+
 class Grafo(object):
     """docstring for Grafo."""
     def __init__(self, numero_de_vertices, tipo ):
@@ -33,17 +34,9 @@ class Grafo(object):
         self.vertices = []
         self.tipo = tipo
         self.numero_de_vertices = numero_de_vertices
-        self.matriz = None
+        self.matriz = self.matriz = [[0]*self.numero_de_vertices for _ in range(self.numero_de_vertices)]
 
-    def addAresta(self, nome_origem: Vertice, nome_destino: Vertice, peso: float=1):
-        origem = self.getVertice(nome_origem)
-        if origem is None:
-            origem = Vertice(nome_origem)
-
-        destino = self.getVertice(nome_destino)
-        if destino is None:
-            destino = Vertice(nome_destino)
-
+    def addAresta(self, origem: Vertice, destino: Vertice, peso: float=1):
         e = Aresta(origem, destino, peso)
         origem.addAdjacencia(destino)
         self.arestas.append(e)
@@ -55,10 +48,12 @@ class Grafo(object):
         return True
 
     def addVertice(self, nome: str):
-        if nome not in self.vertices:
-            vertice = Vertice(nome)
-            self.vertices.append(vertice)
-        return True
+        for v in self.vertices:
+            if v.nome == nome:
+                return v
+        v = Vertice(nome)
+        self.vertices.append(v)
+        return v
 
     def getVertice(self, nome):
         for v in self.vertices:
@@ -85,17 +80,17 @@ class Grafo(object):
         return lista
 
     def show_matriz(self):
-        if self.matriz is None:
-            self.matriz = []
-            self.matriz = [[0]*self.numero_de_vertices for _ in range(self.numero_de_vertices)]
-            for linha in self.matriz:
-                linha = [0] * self.numero_de_vertices
-            for v in self.vertices:
-                for e in self.arestas:
-                    if v.nome == e.origem.nome:
-                        self.matriz[int(v.nome)][int(e.destino.nome)] = e.peso
-            for linha in self.matriz:
-                print(linha)
+        for v in self.vertices:
+            for e in self.arestas:
+                if v.nome == e.origem.nome:
+                    self.matriz[int(v.nome)][int(e.destino.nome)] = e.peso
+        cols = list(range(self.numero_de_vertices))
+        print('   ', end='')
+        for i in cols:
+            print(i, '', end=' ')
+        print()
+        for i, linha in enumerate(self.matriz):
+            print(i, linha)
 
     def busca_profundidade(self, nome_vertice):
         return 'Arvore'
@@ -109,10 +104,21 @@ class Grafo(object):
 
 
 if __name__ == '__main__':
-    g = Grafo(5, tipo='não dirigido')
-    g.addVertice('4')
-    g.addVertice('3')
-    g.addAresta('4', '3', 0.56)
-    # g.addAresta('3', '4', 0.5)
+    with open('./grafo.txt', mode='r', encoding='utf-8') as arquivo:
+        tipo = arquivo.readline()[:-1]
+        numero_de_vertices = int(arquivo.readline())
+        g = Grafo(numero_de_vertices, tipo)
+        for linha in arquivo:
+            dados = linha.split()
+            u = g.addVertice(str(dados[0]))
+            v = g.addVertice(str(dados[1]))
+            # bloco try se o grafo for ponderado
+            try:
+                peso = dados[2]
+            except IndexError as error:
+                peso = 1
+            g.addAresta(u, v, int(peso))
+
+    # A partir daqui pode brincar com o grafo e testar as funções
     print(g.lista_de_adjacencias())
     g.show_matriz()
