@@ -6,7 +6,8 @@ class Vertice(object):
         self.cor = 'branco'
         self.inicio = 0
         self.fim = 0
-        self.pai = self #adicionei o campo pai
+        self.pai = self  # adicionei o campo pai
+        self.visitado = False
 
     def addAdjacencia(self, vertice):
             self.adjacencias.append(vertice)
@@ -94,33 +95,73 @@ class Grafo(object):
             print(i, linha)
 
     def busca_profundidade(self, nome_vertice):
+        class Pilha(list):
+            """
+            Uma pilha bem basica
+            Usei herança pra sobrescrever os metodos
+            deixando a contagem de inicio e fim  de cada vertice
+            nas mãos da Pilha
+            """
+            def __init__(self):
+                self.contador = 0
+                super(Pilha, self).__init__()
 
+            def append(self, elm: Vertice):
+                elm.inicio = self.contador + 1
+                self.contador += 1
+                super().append(elm)
 
-        return 'Arvore'
+            def pop(self):
+                elm = super().pop()
+                elm.fim = self.contador + 1
+                self.contador += 1
 
-    def busca_largura(self, nome_vertice): # retorna um vetor com a ordem de visitação
-        fila_de_prioridade =[] #fila de prioridade
-        ordem_de_visitacao = [] #vetor com ordem de visitação
+        pilha = Pilha()  # empilhar->'.append', desempilhar->'.pop()'
+        for vertice in self.vertices:
+            vertice.inicio = 0  # definindo tempo de inicio = fim = 0
+            vertice.fim = 0
+            if vertice.nome == nome_vertice:  # selecionando vertice para iniciar a busca
+                v = vertice
+        if v is None:  # vertice não valido
+            return None
+        pilha = Pilha()  # incializando a pilha
+        self.__dfs_recursiva(pilha, v)  # iniciando a busca no vertice v
+        for v in self.vertices:  # procura vertices desconexos que ainda não foram visitados
+            if v.visitado is False:
+                self.__dfs_recursiva(pilha, v)
+        return self.vertices  # lista com os vertices
+
+    def __dfs_recursiva(self, pilha, v):
+        v.visitado = True
+        pilha.append(v)
+        for u in v.adjacencias:
+            if u.visitado is False:
+                self.__dfs_recursiva(pilha, u)
+        pilha.pop()
+
+    def busca_largura(self, nome_vertice):  # retorna um vetor com a ordem de visitação
+        fila_de_prioridade = []  # fila de prioridade
+        ordem_de_visitacao = []  # vetor com ordem de visitação
         for v in self.vertices:
             v.cor = 'branco'
-        for t in self.vertices:#procuro o vertice v na lista de vertices
+        for t in self.vertices:  # procuro o vertice v na lista de vertices
             if t.nome == nome_vertice:
-                fila_de_prioridade.append(t)#adiciono ele na fila
+                fila_de_prioridade.append(t)  # adiciono ele na fila
                 while fila_de_prioridade:
                     t = fila_de_prioridade.pop(0)
-                    if t.cor == 'preto': # se o que eu pegar for preto eu pego o proximo
+                    if t.cor == 'preto':  # se o que eu pegar for preto eu pego o proximo
                         t = fila_de_prioridade.pop(0)
                     else:
-                        t.cor = 'cinza'#pinta o vertice da fila de cinza
-                    for x in t.adjacencias: #coloca todos os que ele alcança na fila
+                        t.cor = 'cinza'  # pinta o vertice da fila de cinza
+                    for x in t.adjacencias:  # coloca todos os que ele alcança na fila
                         if x not in fila_de_prioridade:
                             x.pai= t
                             fila_de_prioridade.append(x)
-                    t.cor = 'preto' # pinta ele de preto
+                    t.cor = 'preto'  # pinta ele de preto
                     ordem_de_visitacao.append(t.nome)
                     if t.nome != t.pai.nome:
-                        t.inicio = t.pai.inicio + 1 # o tempo dele é o do pai mais 1
-                    #print(t.nome,t.inicio) #mostra o tempo de descoberta e o vertice
+                        t.inicio = t.pai.inicio + 1  # o tempo dele é o do pai mais 1
+                    # print(t.nome,t.inicio) #mostra o tempo de descoberta e o vertice
         return ordem_de_visitacao
 
     def getTransposto(self):
@@ -149,5 +190,6 @@ if __name__ == '__main__':
     print(g.lista_de_adjacencias())
     g.show_matriz()
     #print("\n",g.busca_largura('0'))
-
-
+    vertices = g.busca_profundidade('0')
+    for v in vertices:
+        print(v.nome, v.inicio, v.fim)
