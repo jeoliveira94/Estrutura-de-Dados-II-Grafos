@@ -10,7 +10,7 @@ class Vertice(object):
         self.visitado = False
 
     def addAdjacencia(self, vertice):
-            self.adjacencias.append(vertice)
+        self.adjacencias.append(vertice)
 
     def __str__(self):
         lista = ''
@@ -18,12 +18,14 @@ class Vertice(object):
             lista += '['+ adj.nome + ']'
         return '{}-->{}'.format(self.nome, lista)
 
+
 class Aresta(object):
     """docstring for Aresta."""
     def __init__(self, origem: Vertice, destino: Vertice, peso: float):
         self.origem = origem
         self.destino = destino
         self.peso = peso
+        self.tipo = ''
 
     def __str__(self):
         return '{}--{}-->{}'.format(self.origem.nome, self.peso, self.destino.nome)
@@ -31,12 +33,16 @@ class Aresta(object):
 
 class Grafo(object):
     """docstring for Grafo."""
-    def __init__(self, numero_de_vertices, tipo ):
+    def __init__(self, numero_de_vertices, tipo):
         self.arestas = []
         self.vertices = []
-        self.tipo = tipo
+        self.tipo = tipo  # dirigido ou não dirigido
+        self.ciclico = None  # Usar DFS para definir True ou False
         self.numero_de_vertices = numero_de_vertices
-        self.matriz = self.matriz = [[0]*self.numero_de_vertices for _ in range(self.numero_de_vertices)]
+        self.matriz = self.matriz = self.__geraMatriz(numero_de_vertices)
+
+    def __geraMatriz(self, tamanho):
+        return [[0]*tamanho for _ in range(tamanho)]
 
     def addAresta(self, origem: Vertice, destino: Vertice, peso: float=1):
         e = Aresta(origem, destino, peso)
@@ -63,14 +69,6 @@ class Grafo(object):
                 return v
         return None
 
-    def lista_arestas(self):
-        for e in self.arestas:
-            print(e)
-
-    def lista_vertices(self):
-        for v in self.vertices:
-            print(v)
-
     def lista_de_adjacencias(self):
         lista = ''
         for v in self.vertices:
@@ -81,7 +79,7 @@ class Grafo(object):
             lista += '\n'
         return lista
 
-    def show_matriz(self):
+    def matriz_de_adjacencia(self):
         for v in self.vertices:
             for e in self.arestas:
                 if v.nome == e.origem.nome:
@@ -155,7 +153,7 @@ class Grafo(object):
                         t.cor = 'cinza'  # pinta o vertice da fila de cinza
                     for x in t.adjacencias:  # coloca todos os que ele alcança na fila
                         if x not in fila_de_prioridade:
-                            x.pai= t
+                            x.pai = t
                             fila_de_prioridade.append(x)
                     t.cor = 'preto'  # pinta ele de preto
                     ordem_de_visitacao.append(t.nome)
@@ -164,10 +162,9 @@ class Grafo(object):
                     # print(t.nome,t.inicio) #mostra o tempo de descoberta e o vertice
         return ordem_de_visitacao
 
-    def getTransposto(self):
+    def setTransposto(self):
         for e in self.arestas:
             e.origem, e.destino = e.destino, e.orige
-
 
 
 if __name__ == '__main__':
@@ -188,8 +185,7 @@ if __name__ == '__main__':
 
     # A partir daqui pode brincar com o grafo e testar as funções
     print(g.lista_de_adjacencias())
-    g.show_matriz()
-    #print("\n",g.busca_largura('0'))
-    vertices = g.busca_profundidade('0')
+    g.matriz_de_adjacencia()
+    vertices = g.busca_profundidade('1')
     for v in vertices:
         print(v.nome, v.inicio, v.fim)
