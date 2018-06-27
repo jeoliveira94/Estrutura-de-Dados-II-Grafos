@@ -6,6 +6,7 @@ class Vertice(object):
         self.cor = 'branco'
         self.inicio = 0
         self.fim = 0
+        self.pai = self #adicionei o campo pai
 
     def addAdjacencia(self, vertice):
             self.adjacencias.append(vertice)
@@ -93,14 +94,39 @@ class Grafo(object):
             print(i, linha)
 
     def busca_profundidade(self, nome_vertice):
+
+
         return 'Arvore'
 
-    def busca_largura(self, nome_vertice):
-        return 'Arvore'
+    def busca_largura(self, nome_vertice): # retorna um vetor com a ordem de visitação
+        fila_de_prioridade =[] #fila de prioridade
+        ordem_de_visitacao = [] #vetor com ordem de visitação
+        for v in self.vertices:
+            v.cor = 'branco'
+        for t in self.vertices:#procuro o vertice v na lista de vertices
+            if t.nome == nome_vertice:
+                fila_de_prioridade.append(t)#adiciono ele na fila
+                while fila_de_prioridade:
+                    t = fila_de_prioridade.pop(0)
+                    if t.cor == 'preto': # se o que eu pegar for preto eu pego o proximo
+                        t = fila_de_prioridade.pop(0)
+                    else:
+                        t.cor = 'cinza'#pinta o vertice da fila de cinza
+                    for x in t.adjacencias: #coloca todos os que ele alcança na fila
+                        if x not in fila_de_prioridade:
+                            x.pai= t
+                            fila_de_prioridade.append(x)
+                    t.cor = 'preto' # pinta ele de preto
+                    ordem_de_visitacao.append(t.nome)
+                    if t.nome != t.pai.nome:
+                        t.inicio = t.pai.inicio + 1 # o tempo dele é o do pai mais 1
+                    #print(t.nome,t.inicio) #mostra o tempo de descoberta e o vertice
+        return ordem_de_visitacao
 
     def getTransposto(self):
         for e in self.arestas:
-            e.origem, e.destino = e.destino, e.origem
+            e.origem, e.destino = e.destino, e.orige
+
 
 
 if __name__ == '__main__':
@@ -122,3 +148,6 @@ if __name__ == '__main__':
     # A partir daqui pode brincar com o grafo e testar as funções
     print(g.lista_de_adjacencias())
     g.show_matriz()
+    #print("\n",g.busca_largura('0'))
+
+
