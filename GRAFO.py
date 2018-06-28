@@ -7,7 +7,6 @@ class Vertice(object):
         self.inicio = 0
         self.fim = 0
         self.pai = self  # adicionei o campo pai
-        self.visitado = False
 
     def addAdjacencia(self, vertice):
         self.adjacencias.append(vertice)
@@ -17,6 +16,9 @@ class Vertice(object):
         for adj in self.adjacencias:
             lista += '['+ adj.nome + ']'
         return '{}-->{}'.format(self.nome, lista)
+
+    def __lt__(self, other):
+        return self.nome < other.nome
 
 
 class Aresta(object):
@@ -28,7 +30,7 @@ class Aresta(object):
         self.tipo = ''
 
     def __str__(self):
-        return '{}--{}-->{}'.format(self.origem.nome, self.peso, self.destino.nome)
+        return 'origem[{}]--peso[{}]--destino[{}]---tipo[{}]'.format(self.origem.nome, self.peso, self.destino.nome, self.tipo)
 
 
 class Grafo(object):
@@ -37,11 +39,14 @@ class Grafo(object):
         self.arestas = []
         self.vertices = []
         self.tipo = tipo  # dirigido ou não dirigido
-        self.ciclico = None  # Usar DFS para definir True ou False
+        self.ciclico = False  # Usar DFS para definir True ou False
         self.numero_de_vertices = numero_de_vertices
         self.matriz = self.matriz = self.__geraMatriz(numero_de_vertices)
 
     def __geraMatriz(self, tamanho):
+        """
+        Gera Matriz preenchida com zero de ordem tamanho x tamanho
+        """
         return [[0]*tamanho for _ in range(tamanho)]
 
     def addAresta(self, origem: Vertice, destino: Vertice, peso: float=1):
@@ -49,7 +54,6 @@ class Grafo(object):
         origem.addAdjacencia(destino)
         self.arestas.append(e)
         if self.tipo != 'dirigido':
-            print('entrou')
             a = Aresta(destino, origem, peso)
             destino.addAdjacencia(origem)
             self.arestas.append(a)
@@ -125,27 +129,87 @@ class Grafo(object):
         pilha = Pilha()  # incializando a pilha
         self.__dfs_recursiva(pilha, v)  # iniciando a busca no vertice v
         for v in self.vertices:  # procura vertices desconexos que ainda não foram visitados
-            if v.visitado is False:
+            if v.cor == 'branco':
                 self.__dfs_recursiva(pilha, v)
-        return self.vertices  # lista com os vertices
+        return self.arestas
 
     def __dfs_recursiva(self, pilha, v):
-        v.visitado = True
-        pilha.append(v)
+        v.cor = 'cinza'  # vertice visitado
+        pilha.append(v)  # empilha
         for u in v.adjacencias:
-            if u.visitado is False:
+            self.__classificar_aresta(v, u)  # classifa aresta correspondente
+            if u.cor == 'branco':  # vertice ainda não visitado
                 self.__dfs_recursiva(pilha, u)
-        pilha.pop()
+        v.cor = 'preto'  # vertice totalmente visitado
+        pilha.pop()  # desempilha
 
-    def busca_largura(self, nome_vertice):  # retorna um vetor com a ordem de visitação
-        fila_de_prioridade = []  # fila de prioridade
+    def ordenacao_topologica(self, nome_vertice):
+        DFS = self.busca_profundidade(nome_vertice)
+        # ordenação topológica so pode ser feita em grafo dirigido e aciclico
+        if self.tipo == 'dirigido' and self.ciclico is False:
+            # selectioin sort para ordenar a listar de vertices pelo tempo de fim
+            for i in range(len(self.vertices)- 1):
+                max = i
+                for j in range(i, len(self.vertices)):
+                    if self.vertices[j].fim > self.vertices[max].fim:
+                        max = j
+                if self.vertices[i] != self.vertices[max]:
+                    aux =  self.vertices[i]
+                    self.vertices[i] = self.vertices[max]
+                    self.vertices[max] = aux
+        return self.vertices  #  retorna lista de vertices
+
+    def elementos_fortemente_conexos(self, vertice):
+        DFS = self.busca_profundidade(vertice)
+        self.__setTransposto()  # transpondo o grafo
+        v = self.__getMaiorTempo()  # vertice com maior tempo de fim
+        # busca em profunidade no grafo transposto começando pelo cara de maior tempo
+        DFS = self.busca_profundidade(v.nome)
+        # remoção de arestas que não seja do tipo arvore
+        for e in self.arestas:
+            if e.tipo != 'arvore':
+                self.arestas.remove(e)
+        return self.arestas
+
+    def __getMaiorTempo(self):
+        u = self.vertices[0]
+        for v in self.vertices:
+            if v.fim > u.fim:
+                u = v
+        return u
+
+    def __getAresta(self, origem: Vertice, destino: Vertice):
+        for e in self.arestas:
+            if e.origem == origem and e.destino == destino:
+                return e
+        return None
+
+    def __classificar_aresta(self, origem: Vertice, destino: Vertice):
+        e = self.__getAresta(origem, destino)
+        if e is None:
+            return
+        if destino.cor == 'branco':
+            e.tipo = 'arvore'
+        elif destino.cor == 'cinza':
+            self.ciclico = True
+            e.tipo = 'retorno'
+        elif destino.cor == 'preto':
+            if origem.inicio < destino.inicio:
+                e.tipo = 'avanco'
+            else:
+                e.tipo = 'cruz'
+        return
+
+
+    def bu  # vertice visitadoca_largura(self, nome_vertice):  # retorna um vetor com a ordem de visitação
+        fila_de_prioridade = [  # empilha]  # fila de prioridade
         ordem_de_visitacao = []  # vetor com ordem de visitação
         for v in self.vertices:
-            v.cor = 'branco'
-        for t in self.vertices:  # procuro o vertice v na lista de vertices
+            v.cor  # classifa aresta correspondente = 'branco'
+        for t in self.vertices:  # procuro o vertic  # vertice ainda não visitadoe v na lista de vertices
             if t.nome == nome_vertice:
-                fila_de_prioridade.append(t)  # adiciono ele na fila
-                while fila_de_prioridade:
+                fila_de_prioridade.append(t)  # adiciono ele na fila  # vertice totalmente visitado
+                while fila_de_prioridade:  # desempilha
                     t = fila_de_prioridade.pop(0)
                     if t.cor == 'preto':  # se o que eu pegar for preto eu pego o proximo
                         t = fila_de_prioridade.pop(0)
@@ -162,9 +226,17 @@ class Grafo(object):
                     # print(t.nome,t.inicio) #mostra o tempo de descoberta e o vertice
         return ordem_de_visitacao
 
-    def setTransposto(self):
+    def __setTransposto(self):
         for e in self.arestas:
-            e.origem, e.destino = e.destino, e.orige
+            e.origem, e.destino = e.destino, e.origem
+
+    def sort(self):
+        # ordena por ordem alfabetica a lista dos vertices do grafo
+        self.vertices.sort()
+        # ordenação da lista de adjacencias de cada vertice por ordem alfabetica
+        for v in self.vertices:
+            v.adjacencias.sort()
+        return ''
 
 
 if __name__ == '__main__':
@@ -181,11 +253,16 @@ if __name__ == '__main__':
                 peso = dados[2]
             except IndexError as error:
                 peso = 1
-            g.addAresta(u, v, int(peso))
+            g.adresta(u, v, int(peso))
+        g.sort()
 
     # A partir daqui pode brincar com o grafo e testar as funções
-    print(g.lista_de_adjacencias())
-    g.matriz_de_adjacencia()
-    vertices = g.busca_profundidade('1')
-    for v in vertices:
-        print(v.nome, v.inicio, v.fim)
+    # print(g.lista_de_adjacencias())
+    # g.matriz_de_adjacencia()
+    # for elm in g.busca_profundidade('0'):
+    #     print(elm)
+
+    # for elm in g.elementos_fortemente_conexos('0'):
+    #     print(el
+    for elm in g.ordenacao_topologica('0'):
+        print(elm)
