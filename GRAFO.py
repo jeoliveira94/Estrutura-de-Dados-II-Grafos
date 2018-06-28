@@ -42,6 +42,7 @@ class Grafo(object):
         self.ciclico = False  # Usar DFS para definir True ou False
         self.numero_de_vertices = numero_de_vertices
         self.matriz = self.matriz = self.__geraMatriz(numero_de_vertices)
+        self.numero_de_ciclos = 0
 
     def __geraMatriz(self, tamanho):
         """
@@ -67,7 +68,7 @@ class Grafo(object):
         self.vertices.append(v)
         return v
 
-    def getVertice(self, nome):
+    def __getVertice(self, nome):
         for v in self.vertices:
             if nome == v.nome:
                 return v
@@ -76,12 +77,16 @@ class Grafo(object):
     def lista_de_adjacencias(self):
         lista = ''
         for v in self.vertices:
-            lista += v.nome + ' -> '
+            lista += 'origem: ' + v.nome + ' -> '
             for e in self.arestas:
                 if v == e.origem:
-                    lista += '({}, {}) '.format(e.destino.nome, str(e.peso))
+                    lista += '(destino: {}, peso: {}) '.format(e.destino.nome, str(e.peso))
             lista += '\n'
-        return lista
+        with open('./lista_de_adjacencias.txt', mode='w', encoding='utf-8') as lista_f:
+            lista_f.write(lista)
+        for linha in lista:
+            print(linha, end='')
+        return
 
     def matriz_de_adjacencia(self):
         for v in self.vertices:
@@ -89,12 +94,18 @@ class Grafo(object):
                 if v.nome == e.origem.nome:
                     self.matriz[int(v.nome)][int(e.destino.nome)] = e.peso
         cols = list(range(self.numero_de_vertices))
-        print('   ', end='')
-        for i in cols:
-            print(i, '', end=' ')
-        print()
-        for i, linha in enumerate(self.matriz):
-            print(i, linha)
+        with open('./matriz_de_adjacencias.txt', mode='w', encoding='utf-8') as matriz_f:
+            matriz_f.write('    ')
+            for i in cols:
+                matriz_f.write('{}  '.format(str(i)) )
+            matriz_f.write('\n')
+            for i, linha in enumerate(self.matriz):
+                matriz_f.write(' {} {}\n'.format(str(i), str(linha)))
+
+        with open('./matriz_de_adjacencias.txt', mode='r', encoding='utf-8') as matriz_f:
+            for linha in matriz_f:
+                print(linha, end='')
+
 
     def busca_profundidade(self, nome_vertice):
         class Pilha(list):
@@ -157,10 +168,13 @@ class Grafo(object):
                     aux =  self.vertices[i]
                     self.vertices[i] = self.vertices[max]
                     self.vertices[max] = aux
+        else:
+            print('ERRO, GRAFO COMTEM CLICOS')
+            return None
         return self.vertices  #  retorna lista de vertices
 
-    def elementos_fortemente_conexos(self, vertice):
-        DFS = self.busca_profundidade(vertice)
+    def elementos_fortemente_conexos(self, nome_vertice):
+        DFS = self.busca_profundidade(nome_vertice)
         self.__setTransposto()  # transpondo o grafo
         v = self.__getMaiorTempo()  # vertice com maior tempo de fim
         # busca em profunidade no grafo transposto começando pelo cara de maior tempo
@@ -192,6 +206,7 @@ class Grafo(object):
             e.tipo = 'arvore'
         elif destino.cor == 'cinza':
             self.ciclico = True
+            self.numero_de_ciclos += 1
             e.tipo = 'retorno'
         elif destino.cor == 'preto':
             if origem.inicio < destino.inicio:
@@ -200,9 +215,8 @@ class Grafo(object):
                 e.tipo = 'cruz'
         return
 
-
-    def bu  # vertice visitadoca_largura(self, nome_vertice):  # retorna um vetor com a ordem de visitação
-        fila_de_prioridade = [  # empilha]  # fila de prioridade
+    def busca_em_largura(self, nome_vertice):  # retorna um vetor com a ordem de visitação
+        fila_de_prioridade = []  # empilha]  # fila de prioridade
         ordem_de_visitacao = []  # vetor com ordem de visitação
         for v in self.vertices:
             v.cor  # classifa aresta correspondente = 'branco'
@@ -238,9 +252,27 @@ class Grafo(object):
             v.adjacencias.sort()
         return ''
 
+    def info(self):
+        with open('./info.txt', mode='w', encoding='utf-8') as info_f:
+            info_f.write('Numero de Vertices: {}\n'.format(len(self.vertices)))
+            info_f.write('Numero de Arestas: {}\n'.format(len(self.arestas)))
+            info_f.write('Numero de ciclos: {}\n'.format(self.numero_de_ciclos))
+
+#
+# if __name__ == '__main__':
+#     welcome_msg = 'Olá!!'
+#     grafo_dir_pon = './grafo.txt'
+#     grafo_not_dir_pon = './grafo2.txt'
+#     grafo_not_dir_not_pon = './grafo3.txt'
+#     grafo_dir_not_pon = './grafo4.txt'
+#     grafo_dir_pon_aci = './grafo5.txt'
+#     load_sucess_msg = 'Grafo carregado com Sucesso!!!'
+#     ciclico = int(input('Ciclico?? <1> yes <2> no\n'))
+#     ponderado = int(input('ponderado?? <1> yes <2> no\n'))
+#     dirigido = int(input('dirigido?? <1> yes <2> no\n'))
 
 if __name__ == '__main__':
-    with open('./grafo.txt', mode='r', encoding='utf-8') as arquivo:
+    with open('./grafo3.txt', mode='r', encoding='utf-8') as arquivo:
         tipo = arquivo.readline()[:-1]
         numero_de_vertices = int(arquivo.readline())
         g = Grafo(numero_de_vertices, tipo)
@@ -253,16 +285,16 @@ if __name__ == '__main__':
                 peso = dados[2]
             except IndexError as error:
                 peso = 1
-            g.adresta(u, v, int(peso))
+            g.addAresta(u, v, int(peso))
         g.sort()
 
     # A partir daqui pode brincar com o grafo e testar as funções
-    # print(g.lista_de_adjacencias())
+    g.lista_de_adjacencias()
     # g.matriz_de_adjacencia()
     # for elm in g.busca_profundidade('0'):
     #     print(elm)
 
     # for elm in g.elementos_fortemente_conexos('0'):
-    #     print(el
-    for elm in g.ordenacao_topologica('0'):
-        print(elm)
+    #     print(elm)
+    # for elm in g.prim('0'):
+    #     print(elm)
