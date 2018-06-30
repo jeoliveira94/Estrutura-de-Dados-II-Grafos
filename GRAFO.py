@@ -1,3 +1,15 @@
+def selection_sort(conjunto):
+    for i in range(len(conjunto) - 1):
+        max = i
+        for j in range(i, len(conjunto)):
+            if conjunto[j].fim > conjunto[max].fim:
+                max = j
+        if conjunto[i] != conjunto[max]:
+            aux = conjunto[i]
+            conjunto[i] = conjunto[max]
+            conjunto[max] = aux
+    return True
+
 class Vertice(object):
     """docstring for Vertice."""
     def __init__(self, nome):
@@ -6,7 +18,8 @@ class Vertice(object):
         self.cor = 'branco'
         self.inicio = 0
         self.fim = 0
-        self.pai = self  # adicionei o campo pai
+        self.pai = None
+        self.distancia = 0
 
     def addAdjacencia(self, vertice):
         self.adjacencias.append(vertice)
@@ -39,7 +52,6 @@ class Grafo(object):
         self.arestas = []
         self.vertices = []
         self.tipo = tipo  # dirigido ou não dirigido
-        self.ciclico = False  # Usar DFS para definir True ou False
         self.numero_de_vertices = numero_de_vertices
         self.matriz = self.matriz = self.__geraMatriz(numero_de_vertices)
         self.numero_de_ciclos = 0
@@ -84,8 +96,7 @@ class Grafo(object):
             lista += '\n'
         with open('./lista_de_adjacencias.txt', mode='w', encoding='utf-8') as lista_f:
             lista_f.write(lista)
-        for linha in lista:
-            print(linha, end='')
+        print(lista)
         return
 
     def matriz_de_adjacencia(self):
@@ -103,20 +114,14 @@ class Grafo(object):
                 matriz_f.write(' {} {}\n'.format(str(i), str(linha)))
 
         with open('./matriz_de_adjacencias.txt', mode='r', encoding='utf-8') as matriz_f:
-            for linha in matriz_f:
-                print(linha, end='')
-
+            print(matriz_f.read())
+        return
 
     def busca_profundidade(self, nome_vertice):
         class Pilha(list):
-            """
-            Uma pilha bem basica
-            Usei herança pra sobrescrever os metodos
-            deixando a contagem de inicio e fim  de cada vertice
-            nas mãos da Pilha
-            """
             def __init__(self):
                 self.contador = 0
+                self.arvore_de_busca = []
                 super(Pilha, self).__init__()
 
             def append(self, elm: Vertice):
@@ -126,6 +131,7 @@ class Grafo(object):
 
             def pop(self):
                 elm = super().pop()
+                self.arvore_de_busca.append(elm)
                 elm.fim = self.contador + 1
                 self.contador += 1
 
@@ -142,14 +148,16 @@ class Grafo(object):
         for v in self.vertices:  # procura vertices desconexos que ainda não foram visitados
             if v.cor == 'branco':
                 self.__dfs_recursiva(pilha, v)
-        return self.arestas
-
+        pilha.arvore_de_busca.reverse()
+        return pilha.arvore_de_busca
+        
     def __dfs_recursiva(self, pilha, v):
         v.cor = 'cinza'  # vertice visitado
         pilha.append(v)  # empilha
         for u in v.adjacencias:
             self.__classificar_aresta(v, u)  # classifa aresta correspondente
             if u.cor == 'branco':  # vertice ainda não visitado
+                u.pai = v
                 self.__dfs_recursiva(pilha, u)
         v.cor = 'preto'  # vertice totalmente visitado
         pilha.pop()  # desempilha
@@ -157,30 +165,23 @@ class Grafo(object):
     def ordenacao_topologica(self, nome_vertice):
         DFS = self.busca_profundidade(nome_vertice)
         # ordenação topológica so pode ser feita em grafo dirigido e aciclico
-        if self.tipo == 'dirigido' and self.ciclico is False:
+        if self.tipo == 'dirigido' and self.numero_de_ciclos == 0:
             # selectioin sort para ordenar a listar de vertices pelo tempo de fim
-            for i in range(len(self.vertices)- 1):
-                max = i
-                for j in range(i, len(self.vertices)):
-                    if self.vertices[j].fim > self.vertices[max].fim:
-                        max = j
-                if self.vertices[i] != self.vertices[max]:
-                    aux =  self.vertices[i]
-                    self.vertices[i] = self.vertices[max]
-                    self.vertices[max] = aux
+            selection_sort(self.vertices)
         else:
-            print('ERRO, GRAFO COMTEM CLICOS')
+            print('ERRO, GRAFO CONTEM CLICOS')
             return None
         return self.vertices  #  retorna lista de vertices
 
-    def elementos_fortemente_conexos(self, nome_vertice):
+    def elementos_conexos(self, nome_vertice):
         DFS = self.busca_profundidade(nome_vertice)
         self.__setTransposto()  # transpondo o grafo
         v = self.__getMaiorTempo()  # vertice com maior tempo de fim
-        # busca em profunidade no grafo transposto começando pelo cara de maior tempo
+        # busca em profundidade no grafo transposto começando pelo cara de maior tempo
         DFS = self.busca_profundidade(v.nome)
         # remoção de arestas que não seja do tipo arvore
         for e in self.arestas:
+            #print(e)
             if e.tipo != 'arvore':
                 self.arestas.remove(e)
         return self.arestas
@@ -205,7 +206,6 @@ class Grafo(object):
         if destino.cor == 'branco':
             e.tipo = 'arvore'
         elif destino.cor == 'cinza':
-            self.ciclico = True
             self.numero_de_ciclos += 1
             e.tipo = 'retorno'
         elif destino.cor == 'preto':
@@ -214,31 +214,6 @@ class Grafo(object):
             else:
                 e.tipo = 'cruz'
         return
-
-    def busca_em_largura(self, nome_vertice):  # retorna um vetor com a ordem de visitação
-        fila_de_prioridade = []  # empilha]  # fila de prioridade
-        ordem_de_visitacao = []  # vetor com ordem de visitação
-        for v in self.vertices:
-            v.cor  # classifa aresta correspondente = 'branco'
-        for t in self.vertices:  # procuro o vertic  # vertice ainda não visitadoe v na lista de vertices
-            if t.nome == nome_vertice:
-                fila_de_prioridade.append(t)  # adiciono ele na fila  # vertice totalmente visitado
-                while fila_de_prioridade:  # desempilha
-                    t = fila_de_prioridade.pop(0)
-                    if t.cor == 'preto':  # se o que eu pegar for preto eu pego o proximo
-                        t = fila_de_prioridade.pop(0)
-                    else:
-                        t.cor = 'cinza'  # pinta o vertice da fila de cinza
-                    for x in t.adjacencias:  # coloca todos os que ele alcança na fila
-                        if x not in fila_de_prioridade:
-                            x.pai = t
-                            fila_de_prioridade.append(x)
-                    t.cor = 'preto'  # pinta ele de preto
-                    ordem_de_visitacao.append(t.nome)
-                    if t.nome != t.pai.nome:
-                        t.inicio = t.pai.inicio + 1  # o tempo dele é o do pai mais 1
-                    # print(t.nome,t.inicio) #mostra o tempo de descoberta e o vertice
-        return ordem_de_visitacao
 
     def __setTransposto(self):
         for e in self.arestas:
@@ -258,10 +233,117 @@ class Grafo(object):
             info_f.write('Numero de Arestas: {}\n'.format(len(self.arestas)))
             info_f.write('Numero de ciclos: {}\n'.format(self.numero_de_ciclos))
 
+    def busca_em_largura(self, nome_vertice):
+        v = self.__getVertice(nome_vertice)
+        if v is None:
+            print('Vertice Invalido')
+            return None
+
+        class Fila(list):
+            def __init__(self):
+                self.arvore_de_busca = []
+                super(Fila, self).__init__()
+
+            def append(self, vertice, pai_vertice=None):
+                vertice.pai = pai_vertice
+                if pai_vertice is None:
+                    vertice.inicio = 1
+                else:
+                    vertice.inicio = pai_vertice.inicio + 1
+                vertice.cor = 'preto'
+                super().append(vertice)
+
+            def pop(self):
+                vertice = super().pop(0)
+                for v in vertice.adjacencias:
+                    if v.cor == 'branco':
+                        self.append(v, pai_vertice=vertice)
+                return vertice
+        fila = Fila()
+        fila.append(v, pai_vertice=None)
+        resultado = []
+        while len(fila) > 0:
+            resultado.append(fila.pop())
+        return resultado
+        return
+
+    def gerar_arvore_de_busca(self, resultado_da_busca, tipo_busca=''):
+        with open('./arvore_de_busca_em_'+tipo+'.txt', mode='w', encoding='utf=8') as arvore_f:
+            for item in resultado_da_busca:
+                try:
+                    var = 'Pai: {}, Vertice: {}, Nivel: {}'.format(item.pai.nome, item.nome, item.inicio)
+                except AttributeError as e:
+                    var = 'Pai: {}, Vertice: {}, Nivel: {}'.format('NULL', item.nome, item.inicio)
+                arvore_f.write(var + '\n')
+                print(var)
+
+    def dijkstra(self, nome_origem):
+        def relax(v: Vertice, u: Vertice):
+            '''Relaxa aresta (v, u)'''
+            e = self.__getAresta(v, u)
+            distancia = v.distancia + e.peso
+            if distancia < u.distancia:
+                u.distancia = distancia
+                u.pai = v
+        def tem_branco(vertices):
+            '''verificar se existe vertice aberto, de cor branca'''
+            for v in vertices:
+                if v.cor == 'branco':
+                    return True
+            return False
+        def get_menor_branco(vertices):
+            '''retorna vertice branco com menor distancia'''
+            lista = []
+            for v in self.vertices:
+                if v.cor == 'branco':
+                    lista.append(v)
+            menor = lista[0]
+            for elm in lista:
+                if elm.distancia < menor.distancia:
+                    menor = elm
+            menor.cor = 'preto'
+            return menor
+        # procura pelo vertice de origem
+        start = self.__getVertice(nome_origem)
+        # verifica se o vertice é valido
+        if start is None:
+            print('Vertice invalido')
+            return None
+        # vertice de origem tem distancia 0 dele mesmo
+        start.distancia = 0
+        # definindo distancia de todos os vertices demais como 99999
+        for v in self.vertices:
+            v.pai = None
+            v.cor = 'branco'
+            if v != start:
+                v.distancia = 99999
+        while(tem_branco(self.vertices)):
+            v = get_menor_branco(self.vertices)
+            for u in v.adjacencias:
+                if u.cor == 'branco':
+                    relax(v, u)
+        return True
+
+    def menor_caminho(self, nome_origem, nome_destino):
+        '''retorna menor caminho entre 2 vertices'''
+        v = self.__getVertice(nome_origem)
+        u = self.__getVertice(nome_destino)
+        if u is None or v is None:
+            return None
+        self.dijkstra(v.nome)
+        lista = []
+        while u is not None:
+            lista.append(u)
+            u = u.pai
+        # faz um reverse na lista pois a lista contem o
+        # caminho inverso de destino para origem
+        lista.reverse()
+        return lista  # retorna lista com o caminho mais curto
+
 #
 # if __name__ == '__main__':
 #     welcome_msg = 'Olá!!'
-#     grafo_dir_pon = './grafo.txt'
+#     grafo_dir_pon = './grafo1.txt'
 #     grafo_not_dir_pon = './grafo2.txt'
 #     grafo_not_dir_not_pon = './grafo3.txt'
 #     grafo_dir_not_pon = './grafo4.txt'
@@ -271,8 +353,9 @@ class Grafo(object):
 #     ponderado = int(input('ponderado?? <1> yes <2> no\n'))
 #     dirigido = int(input('dirigido?? <1> yes <2> no\n'))
 
+
 if __name__ == '__main__':
-    with open('./grafo3.txt', mode='r', encoding='utf-8') as arquivo:
+    with open('./grafo1.txt', mode='r', encoding='utf-8') as arquivo:
         tipo = arquivo.readline()[:-1]
         numero_de_vertices = int(arquivo.readline())
         g = Grafo(numero_de_vertices, tipo)
@@ -287,14 +370,64 @@ if __name__ == '__main__':
                 peso = 1
             g.addAresta(u, v, int(peso))
         g.sort()
+    while True:
+        opc = int(input('1- continue 0 - Sair\n'))
+        if opc == 0:
+            break
+        opc = int(input('Representar Grafo (Lista e Matriz)? <1 - sim> <2 - Não>\n'))
+        if opc == 1:
+            opc = int(input('1 - Lista\n2 - Matriz'))
+            if opc == 1:
+                g.lista_de_adjacencias()
+            elif opc == 2:
+                g.matriz_de_adjacencia()
+            else:
+                print('ERRO, OPÇÃO INVALIDA')
+            break
+        opc = int(input('Realizar Busca (Largura e Profundidade)? <1 - sim> <2 - Não>\n'))
+        if opc == 1:
+            opc = int(input('1 - Largura\n2 - Profundidade'))
+            if opc == 1:
+                resultado = g.busca_em_largura('0')
+                g.gerar_arvore_de_busca(resultado, tipo_busca='largura')
+            elif opc == 2:
+                resultado = g.busca_profundidade('0')
+                g.gerar_arvore_de_busca(resultado, tipo_busca='largura')
+            else:
+                print('ERRO, OPÇÃO INVALIDA')
+            g.info()
+            break
+        opc = int(input('Listar componentes conexos? <1 - sim> <2 - Não>\n'))
+        if opc == 1:
+            nome_origem = '0'
+            elementos_conexos = g.elementos_conexos(nome_origem)
+            print('Numero de Elementos Conexos: {}'.format(len(elementos_conexos)))
+            for elm in elementos_conexos:
+                print('Origem: {}-->Destino: {}'.format(elm.origem.nome, elm.destino.nome))
+            break
+        opc = int(input('Apresentar Arvore Geradora Minima? <1 - sim> <2 - Não>\n'))
+        if opc == 1:
+            pass
+            # listar
+            break
+        opc = int(input('Apresentar caminho mais curto? <1 - sim> <2 - Não>\n'))
+        if opc == 1:
+            opc = int(input('1 - Dijkstra\n2 - Floyd-Warshall'))
+            if opc == 1:
+                print('Usando Dijkstra\nCaminho do vertice {} ate o vertice{}'.format('origem', 'destino'))
+                for v in g.menor_caminho('0', '2'):
+                    print('Vertice: {}, Distancia: {}'.format(v.nome, v.distancia))
+            elif opc == 2:
+                # floyd
+                pass
+            else:
+                print('ERRO, OPÇÃO INVALIDA')
+            break
 
-    # A partir daqui pode brincar com o grafo e testar as funções
-    g.lista_de_adjacencias()
-    # g.matriz_de_adjacencia()
-    # for elm in g.busca_profundidade('0'):
-    #     print(elm)
 
-    # for elm in g.elementos_fortemente_conexos('0'):
-    #     print(elm)
-    # for elm in g.prim('0'):
-    #     print(elm)
+
+    #ordenacao_topologica = g.ordenacao_topologica(nome_origem)
+
+    #if ordenacao_topologica is not None:
+     #   for v in ordenacao_topologica:
+      #      print(v.nome)
