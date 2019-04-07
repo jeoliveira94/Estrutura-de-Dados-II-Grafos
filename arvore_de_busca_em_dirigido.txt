@@ -1,7 +1,0 @@
-Pai: NULL, Vertice: 0, Nivel: 1
-Pai: 0, Vertice: 1, Nivel: 2
-Pai: 0, Vertice: 3, Nivel: 2
-Pai: 3, Vertice: 4, Nivel: 3
-Pai: 4, Vertice: 5, Nivel: 4
-Pai: 5, Vertice: 2, Nivel: 5
-Pai: 2, Vertice: 6, Nivel: 6
