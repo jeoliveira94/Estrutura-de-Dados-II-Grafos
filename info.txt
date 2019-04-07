@@ -1,3 +1,3 @@
 Numero de Vertices: 7
 Numero de Arestas: 10
-Numero de ciclos: 3
+Numero de ciclos: 0

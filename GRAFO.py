@@ -236,7 +236,6 @@ class Grafo(object):
     def busca_em_largura(self, nome_vertice):
         v = self.__getVertice(nome_vertice)
         if v is None:
-            print('Vertice Invalido')
             return None
 
         class Fila(list):
@@ -329,6 +328,7 @@ class Grafo(object):
         v = self.__getVertice(nome_origem)
         u = self.__getVertice(nome_destino)
         if u is None or v is None:
+            print('vertices invalidos')
             return None
         self.dijkstra(v.nome)
         lista = []
@@ -340,94 +340,143 @@ class Grafo(object):
         lista.reverse()
         return lista  # retorna lista com o caminho mais curto
 
-#
-# if __name__ == '__main__':
-#     welcome_msg = 'Olá!!'
-#     grafo_dir_pon = './grafo1.txt'
-#     grafo_not_dir_pon = './grafo2.txt'
-#     grafo_not_dir_not_pon = './grafo3.txt'
-#     grafo_dir_not_pon = './grafo4.txt'
-#     grafo_dir_pon_aci = './grafo5.txt'
-#     load_sucess_msg = 'Grafo carregado com Sucesso!!!'
-#     ciclico = int(input('Ciclico?? <1> yes <2> no\n'))
-#     ponderado = int(input('ponderado?? <1> yes <2> no\n'))
-#     dirigido = int(input('dirigido?? <1> yes <2> no\n'))
+    def floyd_warsall(self,numero_de_vertices):
+        '''printa uma matriz com os caminhos mais curtos'''
+        matriz_caminho_min = [[0]*numero_de_vertices for _ in range(numero_de_vertices)]
+        if self.tipo != 'não dirigido': # só
+            for i in range(len(matriz_caminho_min)): # faço a matriz de adjacencias
+                for j in range(len(matriz_caminho_min[i])):
+                    for k in self.arestas:
+                        if k.origem.nome == str(i) and k.destino.nome == str(j):
+                            matriz_caminho_min[i][j] = k.peso
 
+            for i in range(len(matriz_caminho_min)):# coloco infinito(i) em todos os estados que são 0
+                for j in range(len(matriz_caminho_min[i])):
+                    if matriz_caminho_min[i][j] == 0:
+                        matriz_caminho_min[i][j] = 'i'
+            for k in range(numero_de_vertices):#coloco 0 na diagonal principal
+                matriz_caminho_min[k][k] = 0
+            for k in range(numero_de_vertices): # faço o calculo da matriz de caminho minimo
+                for i in range(len(matriz_caminho_min)):
+                    for j in range(len(matriz_caminho_min[i])):
+                        if matriz_caminho_min[i][k] != 'i' and matriz_caminho_min[k][j] != 'i':
+                            if matriz_caminho_min[i][j] == 'i' or matriz_caminho_min[i][j] > matriz_caminho_min[i][k] + matriz_caminho_min[k][j]:
+
+                                matriz_caminho_min[i][j] = matriz_caminho_min[i][k] + matriz_caminho_min[k][j]
+            for i in range(len(matriz_caminho_min)):
+
+                for j in range(len(matriz_caminho_min[i])):
+                    print(matriz_caminho_min[i][j],'\t',end = "")
+                print('')
+        else:
+            print('ERRO, O GRAFO É DIRIGIDO')
+        return None
 
 if __name__ == '__main__':
-    with open('./grafo1.txt', mode='r', encoding='utf-8') as arquivo:
-        tipo = arquivo.readline()[:-1]
-        numero_de_vertices = int(arquivo.readline())
-        g = Grafo(numero_de_vertices, tipo)
-        for linha in arquivo:
-            dados = linha.split()
-            u = g.addVertice(str(dados[0]))
-            v = g.addVertice(str(dados[1]))
-            # bloco try se o grafo for ponderado
-            try:
-                peso = dados[2]
-            except IndexError as error:
-                peso = 1
-            g.addAresta(u, v, int(peso))
-        g.sort()
     while True:
-        opc = int(input('1- continue 0 - Sair\n'))
+        print('''\nEstrutura de dados II - Implementação 3\n\n[ 1 ] Carregar Grafo\n[ 0 ] Sair do Programa''')
+        opc = int(input('Escolha uma Opção: '))
         if opc == 0:
+            print('')
             break
-        opc = int(input('Representar Grafo (Lista e Matriz)? <1 - sim> <2 - Não>\n'))
         if opc == 1:
-            opc = int(input('1 - Lista\n2 - Matriz'))
+            print('''[ 1 ] Grafo Dirigido\n[ 2 ] Grafo Não Dirigido\n[ 3 ] Entre Com seu grafo''')
+            opc = int(input('Escolha uma Opção: '))
+            if opc != 1 and opc != 2 and opc != 3:
+                print('ERRO, OPÇÃO INVALIDA')
+                break
+            if opc == 3:
+                grafo = str(input('Entre com o caminho de onde o Grafo se encontra\n'))
+            else:
+                grafo = './grafo' + str(opc)+'.txt'
+            with open(grafo, mode='r', encoding='utf-8') as arquivo:
+                tipo = arquivo.readline()[:-1]
+                numero_de_vertices = int(arquivo.readline())
+                g = Grafo(numero_de_vertices, tipo)
+                for linha in arquivo:
+                    dados = linha.split()
+                    u = g.addVertice(str(dados[0]))
+                    v = g.addVertice(str(dados[1]))
+                    # bloco try se o grafo for ponderado
+                    try:
+                        peso = dados[2]
+                    except IndexError as error:
+                        peso = 1
+                    g.addAresta(u, v, int(peso))
+                g.sort()
+
+            while True:
+                print('Como deseja representar o Grafo?')
+                print('''[ 1 ] Lista de Adjacencias\n[ 2 ] Matriz de Adjacencias\n[ 3 ] Ir para os Algoritmos''')
+                opc = int(input('Escolha uma Opção: '))
+                if opc == 1:
+                    g.lista_de_adjacencias()
+                elif opc == 2:
+                    g.matriz_de_adjacencia()
+                elif opc == 3:
+                    break
+                else:
+                    print('ERRO, OPÇÃO INVALIDA')
+                    break
+        else:
+            print('ERRO, OPÇÃO INVALIDA')
+            break
+        while True:
+            print('''[ 1 ] Realizar Busca\n[ 2 ] Componentes Fortemente Conexos\n[ 3 ] Caminho Minimo\n[ 4 ] Ordenação Topologica\n[ 5 ] Sair''')
+            opc = int(input('Escolha uma Opção: '))
             if opc == 1:
-                g.lista_de_adjacencias()
+                opc = int(input('1 - Largura\n2 - Profundidade'))
+                if opc == 1:
+                    vertice_inicio = str(input('Qual o vertice origem?\n'))
+                    resultado = g.busca_em_largura(vertice_inicio)
+                    for i in resultado:
+                        print('Vertice:', i.nome, '\ttempo de Descoberta:', i.inicio)
+                    g.gerar_arvore_de_busca(resultado, tipo_busca='largura')
+                elif opc == 2:
+                    vertice_inicio = str(input('Qual o vertice origem?\n'))
+                    resultado = g.busca_profundidade(vertice_inicio)
+                    for i in resultado:
+                        print('Vertice:', i.nome, '\ttempo de Descoberta:', i.inicio, '\ttempo de termino: ', i.fim)
+                    g.gerar_arvore_de_busca(resultado, tipo_busca='largura')
+                else:
+                    print('ERRO, OPÇÃO INVALIDA')
+                    break
+                g.info()
             elif opc == 2:
-                g.matriz_de_adjacencia()
+                nome_origem = '0'
+                elementos_conexos = g.elementos_conexos(nome_origem)
+                print('Numero de Elementos Conexos: {}'.format(len(elementos_conexos)))
+                i =0
+                for elm in elementos_conexos:
+                    i+=1
+                    print('Origem: {}-->Destino: {}'.format(elm.origem.nome, elm.destino.nome))
+                print('Numero de elementos fortemente conexos: ', i)
+            elif opc == 3:
+                opc = int(input('[ 1 ] Dijkstra\n[ 2 ] Floyd-Warshall'))
+                if opc == 1:
+                    print('Usando Dijkstra\nCaminho do vertice {} ate o vertice{}'.format('origem', ' destino'))
+                    for v in g.menor_caminho('0', '2'):
+                        print('Vertice: {}, Distancia: {}'.format(v.nome, v.distancia))
+                elif opc == 2:
+                    print('')
+                    g.floyd_warsall(g.numero_de_vertices)
+                    print('')
+                else:
+                    print('ERRO, OPÇÃO INVALIDA')
+                    break
+            elif opc == 4:
+                nome_origem = str(input('Qual o vertice origem?\n'))
+                ordenacao_topologica = g.ordenacao_topologica(nome_origem)
+                if ordenacao_topologica != None:
+                    print('sequência aconselhada')
+                    for i in ordenacao_topologica:
+                        print('Vertice:', i.nome, '\t', end='')
+                    print('\n')
+                    for i in ordenacao_topologica:
+                        print('Vertice:', i.nome, '\ttempo de Descoberta:', i.inicio, '\ttempo de termino: ', i.fim)
+            elif opc == 5:
+                break
             else:
                 print('ERRO, OPÇÃO INVALIDA')
-            break
-        opc = int(input('Realizar Busca (Largura e Profundidade)? <1 - sim> <2 - Não>\n'))
-        if opc == 1:
-            opc = int(input('1 - Largura\n2 - Profundidade'))
-            if opc == 1:
-                resultado = g.busca_em_largura('0')
-                g.gerar_arvore_de_busca(resultado, tipo_busca='largura')
-            elif opc == 2:
-                resultado = g.busca_profundidade('0')
-                g.gerar_arvore_de_busca(resultado, tipo_busca='largura')
-            else:
-                print('ERRO, OPÇÃO INVALIDA')
-            g.info()
-            break
-        opc = int(input('Listar componentes conexos? <1 - sim> <2 - Não>\n'))
-        if opc == 1:
-            nome_origem = '0'
-            elementos_conexos = g.elementos_conexos(nome_origem)
-            print('Numero de Elementos Conexos: {}'.format(len(elementos_conexos)))
-            for elm in elementos_conexos:
-                print('Origem: {}-->Destino: {}'.format(elm.origem.nome, elm.destino.nome))
-            break
-        opc = int(input('Apresentar Arvore Geradora Minima? <1 - sim> <2 - Não>\n'))
-        if opc == 1:
-            pass
-            # listar
-            break
-        opc = int(input('Apresentar caminho mais curto? <1 - sim> <2 - Não>\n'))
-        if opc == 1:
-            opc = int(input('1 - Dijkstra\n2 - Floyd-Warshall'))
-            if opc == 1:
-                print('Usando Dijkstra\nCaminho do vertice {} ate o vertice{}'.format('origem', 'destino'))
-                for v in g.menor_caminho('0', '2'):
-                    print('Vertice: {}, Distancia: {}'.format(v.nome, v.distancia))
-            elif opc == 2:
-                # floyd
-                pass
-            else:
-                print('ERRO, OPÇÃO INVALIDA')
-            break
+                break
 
-
-
-    #ordenacao_topologica = g.ordenacao_topologica(nome_origem)
-
-    #if ordenacao_topologica is not None:
-     #   for v in ordenacao_topologica:
-      #      print(v.nome)
